@@ -15,5 +15,7 @@ namespace LogisticsAssistant.Data
         }
 
         public DbSet<LogisticsAssistant.Models.Lorries> Lorries { get; set; } = default!;
+
+        public DbSet<LogisticsAssistant.Models.ScheduledTrips>? ScheduledTrips { get; set; }
     }
 }

@@ -1,0 +1,65 @@
+﻿@model IEnumerable<LogisticsAssistant.Models.ScheduledTrips>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Scheduled trips</h1>
+
+<p>
+    <a asp-action="Create">Schedule a new trip</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Lorry)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Distance)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.TripDescription)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.DateOfDepartue)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.DateOfArrival)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CreationTripDate)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Lorry.LorryBrand)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Distance)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.TripDescription)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.DateOfDepartue)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.DateOfArrival)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.CreationTripDate)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.ScheduledTripId">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.ScheduledTripId">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.ScheduledTripId">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

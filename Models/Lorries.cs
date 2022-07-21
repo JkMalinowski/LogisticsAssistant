@@ -5,9 +5,11 @@ namespace LogisticsAssistant.Models
 {
     public class Lorries
     {
+        [Key]
         public int Id { get; set; }
         [Required(ErrorMessage = "Lorry brand is required!")]
         [DisplayName("Lorry brand")]
+        [MaxLength(50)]
         public string? LorryBrand { get; set; }
         [Required(ErrorMessage = "Max speed should be in range 1 and 100!")]
         [Range(1, 100)]

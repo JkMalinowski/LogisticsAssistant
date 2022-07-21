@@ -4,6 +4,7 @@ using LogisticsAssistant.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LogisticsAssistant.Migrations
 {
     [DbContext(typeof(LogisticsAssistantContext))]
-    partial class LogisticsAssistantContextModelSnapshot : ModelSnapshot
+    [Migration("20220721070234_AddDataTypeDeclaration")]
+    partial class AddDataTypeDeclaration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,8 +37,7 @@ namespace LogisticsAssistant.Migrations
 
                     b.Property<string>("LorryBrand")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("MaxSpeed")
                         .HasColumnType("int");
@@ -70,8 +71,7 @@ namespace LogisticsAssistant.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("TripDescription")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("ScheduledTripId");
 
