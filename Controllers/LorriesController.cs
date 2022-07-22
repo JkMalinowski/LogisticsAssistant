@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using LogisticsAssistant.Data;
 using LogisticsAssistant.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace LogisticsAssistant.Controllers
 {
+    [Authorize]
     public class LorriesController : Controller
     {
         private readonly LogisticsAssistantContext _context;
@@ -19,15 +21,14 @@ namespace LogisticsAssistant.Controllers
             _context = context;
         }
 
-        // GET: Lorries
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
-              return _context.Lorries != null ? 
+              return _context.Lorries != null ?
                           View(await _context.Lorries.ToListAsync()) :
                           Problem("Entity set 'LogisticsAssistantContext.Lorries'  is null.");
         }
 
-        // GET: Lorries/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null || _context.Lorries == null)
@@ -45,15 +46,11 @@ namespace LogisticsAssistant.Controllers
             return View(lorries);
         }
 
-        // GET: Lorries/Create
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Lorries/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,LorryBrand,MaxSpeed,BreakInMinutes")] Lorries lorries)
@@ -67,7 +64,6 @@ namespace LogisticsAssistant.Controllers
             return View(lorries);
         }
 
-        // GET: Lorries/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null || _context.Lorries == null)
@@ -83,9 +79,6 @@ namespace LogisticsAssistant.Controllers
             return View(lorries);
         }
 
-        // POST: Lorries/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,LorryBrand,MaxSpeed,BreakInMinutes")] Lorries lorries)
@@ -118,7 +111,6 @@ namespace LogisticsAssistant.Controllers
             return View(lorries);
         }
 
-        // GET: Lorries/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null || _context.Lorries == null)
@@ -136,7 +128,6 @@ namespace LogisticsAssistant.Controllers
             return View(lorries);
         }
 
-        // POST: Lorries/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -150,7 +141,7 @@ namespace LogisticsAssistant.Controllers
             {
                 _context.Lorries.Remove(lorries);
             }
-            
+
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }

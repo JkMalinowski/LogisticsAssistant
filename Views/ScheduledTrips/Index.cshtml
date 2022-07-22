@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<LogisticsAssistant.Models.ScheduledTrips>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Scheduled trips";
 }
 
 <h1>Scheduled trips</h1>
@@ -9,6 +9,14 @@
 <p>
     <a asp-action="Create">Schedule a new trip</a>
 </p>
+
+<form asp-controller="ScheduledTrips" asp-action="Index" method="get">
+    <p>
+        Search in discription: <input type="text" name="SearchString" />
+        <input type="submit" value="Filter" />
+    </p>
+</form>
+
 <table class="table">
     <thead>
         <tr>

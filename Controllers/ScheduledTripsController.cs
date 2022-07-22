@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using LogisticsAssistant.Data;
+using LogisticsAssistant.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using LogisticsAssistant.Data;
-using LogisticsAssistant.Models;
 
 namespace LogisticsAssistant.Controllers
 {
+    [Authorize]
     public class ScheduledTripsController : Controller
     {
         private readonly LogisticsAssistantContext _context;
@@ -19,14 +17,18 @@ namespace LogisticsAssistant.Controllers
             _context = context;
         }
 
-        // GET: ScheduledTrips
-        public async Task<IActionResult> Index()
+        [AllowAnonymous]
+        public async Task<IActionResult> Index(string lorryBrand, string searchString)
         {
             var logisticsAssistantContext = _context.ScheduledTrips.Include(s => s.Lorry);
+            if (!String.IsNullOrEmpty(searchString))
+            {
+                var logisticsAssistantContext2 = logisticsAssistantContext.Where(x => x.TripDescription.Contains(searchString));
+                return View(await logisticsAssistantContext2.ToListAsync());
+            }
             return View(await logisticsAssistantContext.ToListAsync());
         }
 
-        // GET: ScheduledTrips/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null || _context.ScheduledTrips == null)
@@ -45,14 +47,12 @@ namespace LogisticsAssistant.Controllers
             return View(scheduledTrips);
         }
 
-        // GET: ScheduledTrips/Create
         public IActionResult Create()
         {
             ViewData["LorryId"] = new SelectList(_context.Lorries, "Id", "LorryBrand");
-            //ViewData["LorryId"] = new SelectList(_context.Lorries, "Id", "LorryBrand");
             return View();
         }
-        
+
         private DateTime CalcArrivalDate(DateTime departueDate, int distance, int maxSpeed)
         {
             double tripTimeInHours = distance / maxSpeed;
@@ -65,17 +65,20 @@ namespace LogisticsAssistant.Controllers
             var lorryTrips = _context.ScheduledTrips.Where(x => x.LorryId == lorryId);
             foreach(var trip in lorryTrips)
             {
-                if(dateOfArrival.AddMinutes(breakTime) < trip.DateOfDepartue ||
+                if ((dateOfDepartue < trip.DateOfDepartue && dateOfArrival > trip.DateOfDepartue) ||
+                    (dateOfDepartue < trip.DateOfArrival && dateOfArrival > trip.DateOfArrival) ||
+                    (dateOfDepartue < trip.DateOfDepartue && dateOfArrival > trip.DateOfArrival) ||
+                    (dateOfDepartue > trip.DateOfDepartue && dateOfArrival < trip.DateOfArrival) ||
+                    dateOfArrival.AddMinutes(breakTime) > trip.DateOfDepartue ||
                     trip.DateOfArrival.AddMinutes(breakTime) < dateOfDepartue)
                 {
-                    Console.WriteLine();
+                    Console.WriteLine("Dates overlap");
                     return false;
                 }
             }
             return true;
         }
 
-        // POST: ScheduledTrips/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("LorryId,TripDescription,Distance,DateOfDepartue,DateOfArrival,CreationTripDate")] ScheduledTrips scheduledTrips)
@@ -93,7 +96,6 @@ namespace LogisticsAssistant.Controllers
             return View(scheduledTrips);
         }
 
-        // GET: ScheduledTrips/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null || _context.ScheduledTrips == null)
@@ -110,9 +112,6 @@ namespace LogisticsAssistant.Controllers
             return View(scheduledTrips);
         }
 
-        // POST: ScheduledTrips/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("ScheduledTripId,LorryId,TripDescription,Distance,DateOfDepartue,DateOfArrival,CreationTripDate")] ScheduledTrips scheduledTrips)
@@ -146,7 +145,6 @@ namespace LogisticsAssistant.Controllers
             return View(scheduledTrips);
         }
 
-        // GET: ScheduledTrips/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null || _context.ScheduledTrips == null)
@@ -165,7 +163,6 @@ namespace LogisticsAssistant.Controllers
             return View(scheduledTrips);
         }
 
-        // POST: ScheduledTrips/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -179,7 +176,6 @@ namespace LogisticsAssistant.Controllers
             {
                 _context.ScheduledTrips.Remove(scheduledTrips);
             }
-            
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
