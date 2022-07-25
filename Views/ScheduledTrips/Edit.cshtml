@@ -34,16 +34,6 @@
                 <span asp-validation-for="DateOfDepartue" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="DateOfArrival" class="control-label"></label>
-                <input asp-for="DateOfArrival" class="form-control" />
-                <span asp-validation-for="DateOfArrival" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="CreationTripDate" class="control-label"></label>
-                <input asp-for="CreationTripDate" class="form-control" />
-                <span asp-validation-for="CreationTripDate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
                 <input type="submit" value="Save" class="btn btn-primary" />
             </div>
         </form>
@@ -51,7 +41,7 @@
 </div>
 
 <div>
-    <a asp-action="Index">Back to List</a>
+    <a class="btn btn-secondary" asp-action="Index">Back to List</a>
 </div>
 
 @section Scripts {

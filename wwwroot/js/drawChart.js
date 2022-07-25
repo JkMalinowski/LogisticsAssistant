@@ -1,74 +1,25 @@
-﻿const CustomTooltip = (tooltipItems) => {
-    return `${tooltipItems.raw[0]} ${tooltipItems.raw[1]}`;
-}
-
-const RandomRgbValue = () => {
-    return Math.ceil(Math.random() * 255);
-}
-
-const CAR_BRANDS = $(".lorryBrand");
-const data = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    datasets: [
-        {
-            label: 'Trips schedule',
-            data: [
-                ['2022-02-01', '2022-02-03', '2022-02-05', '2022-02-06'],
-                ['2022-02-03', '2022-02-05'],
-                ['2022-02-07', '2022-02-09'],
-                ['2022-02-10', '2022-02-11'],
-                ['2022-02-11', '2022-02-14'],
-                ['2022-02-14', '2022-02-19'],
-                ['2022-02-19', '2022-02-27']
-            ],
-            backgroundColor: [
-                'rgba(255, 26, 104, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)',
-                'rgba(0, 0, 0, 0.2)'
-            ],
-            borderColor: [
-                'rgba(255, 26, 104, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)',
-                'rgba(0, 0, 0, 1)'
-            ],
-            borderWidth: 1,
-            barPercentage: 0.9,
-        }]
-};
-
-const config = {
-    type: 'bar',
-    data,
-    options: {
-        indexAxis: 'y',
-        scales: {
-            x: {
-                min: '2022-02-01',
-                type: 'time',
-                time: {
-                    unit: 'day'
-                }
-            },
-            y: {
-                beginAtZero: true
-            }
-        },
-        plugins: {
-            tooltip: {
-                callbacks: {
-                    label: CustomTooltip,
-                }
-            }
-        }
+﻿function addDataToDataTable(dataTableObj) {
+    const TABLE_DATA = document.querySelectorAll('td');
+    for (let i = 0; i < TABLE_DATA.length; i += 7) {
+        let lorry = TABLE_DATA[i].innerText;
+        let dateOfDepartue = TABLE_DATA[i + 3].innerText;
+        let dateOfArrival = TABLE_DATA[i + 4].innerText;
+        dataTableObj.addRow([lorry,
+            new Date(dateOfDepartue.substr(6, 4), dateOfDepartue.substr(3, 2) - 1, dateOfDepartue.substr(0, 2), dateOfDepartue.substr(11, 2), dateOfDepartue.substr(14, 2)),
+            new Date(dateOfArrival.substr(6, 4), dateOfArrival.substr(3, 2) - 1, dateOfArrival.substr(0, 2), dateOfArrival.substr(11, 2), dateOfArrival.substr(14, 2))
+            ]);
     }
-};
+}
 
-const myChart = new Chart(document.getElementById('Chart'), config);
+google.charts.load("current", { packages: ["timeline"] });
+google.charts.setOnLoadCallback(drawChart);
+function drawChart() {
+    var container = document.getElementById('Chart');
+    var chart = new google.visualization.Timeline(container);
+    var dataTable = new google.visualization.DataTable();
+    dataTable.addColumn({ type: 'string', id: 'Lorry' });
+    dataTable.addColumn({ type: 'date', id: 'DateOfDepartue' });
+    dataTable.addColumn({ type: 'date', id: 'DateOfArrival' });
+    addDataToDataTable(dataTable);
+    chart.draw(dataTable);
+}

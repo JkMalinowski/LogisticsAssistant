@@ -53,14 +53,17 @@ namespace LogisticsAssistant.Controllers
             return View();
         }
 
-        private DateTime CalcArrivalDate(DateTime departueDate, int distance, int maxSpeed)
+        private DateTime CalcArrivalDate(DateTime departueDate, int distance, int maxSpeed, int breakInMinutes, double breakAfterCertainRideTime)
         {
             double tripTimeInHours = distance / maxSpeed;
-            DateTime arrivalDate = departueDate.AddHours(tripTimeInHours);
+            double breakDurationInHours = (Double)breakInMinutes / 60.0;
+            double totalBreaksTimeInHours = Math.Ceiling(tripTimeInHours / breakAfterCertainRideTime) * breakDurationInHours;
+            double totalTripTimeInHours = tripTimeInHours + totalBreaksTimeInHours;
+            DateTime arrivalDate = departueDate.AddHours(totalTripTimeInHours);
             return arrivalDate;
         }
 
-        private bool IsTripDateValid(int lorryId, DateTime dateOfDepartue, DateTime dateOfArrival, int breakTime)
+        private bool IsTripDateValid(int lorryId, DateTime dateOfDepartue, DateTime dateOfArrival)
         {
             var lorryTrips = _context.ScheduledTrips.Where(x => x.LorryId == lorryId);
             foreach(var trip in lorryTrips)
@@ -68,11 +71,8 @@ namespace LogisticsAssistant.Controllers
                 if ((dateOfDepartue < trip.DateOfDepartue && dateOfArrival > trip.DateOfDepartue) ||
                     (dateOfDepartue < trip.DateOfArrival && dateOfArrival > trip.DateOfArrival) ||
                     (dateOfDepartue < trip.DateOfDepartue && dateOfArrival > trip.DateOfArrival) ||
-                    (dateOfDepartue > trip.DateOfDepartue && dateOfArrival < trip.DateOfArrival) ||
-                    dateOfArrival.AddMinutes(breakTime) > trip.DateOfDepartue ||
-                    trip.DateOfArrival.AddMinutes(breakTime) < dateOfDepartue)
+                    (dateOfDepartue > trip.DateOfDepartue && dateOfArrival < trip.DateOfArrival))
                 {
-                    Console.WriteLine("Dates overlap");
                     return false;
                 }
             }
@@ -85,8 +85,8 @@ namespace LogisticsAssistant.Controllers
         {
             scheduledTrips.CreationTripDate = DateTime.Now;
             var lorry = _context.Lorries.FirstOrDefaultAsync(x => x.Id == scheduledTrips.LorryId);
-            scheduledTrips.DateOfArrival = CalcArrivalDate(scheduledTrips.DateOfDepartue, scheduledTrips.Distance, lorry.Result.MaxSpeed);
-            if (ModelState.IsValid && IsTripDateValid(lorry.Result.Id, scheduledTrips.DateOfDepartue, scheduledTrips.DateOfArrival, lorry.Result.BreakInMinutes))
+            scheduledTrips.DateOfArrival = CalcArrivalDate(scheduledTrips.DateOfDepartue, scheduledTrips.Distance, lorry.Result.MaxSpeed, lorry.Result.BreakInMinutes, lorry.Result.BreakAfterRideInHours);
+            if (ModelState.IsValid && IsTripDateValid(lorry.Result.Id, scheduledTrips.DateOfDepartue, scheduledTrips.DateOfArrival))
             {
                 _context.Add(scheduledTrips);
                 await _context.SaveChangesAsync();
@@ -102,7 +102,6 @@ namespace LogisticsAssistant.Controllers
             {
                 return NotFound();
             }
-
             var scheduledTrips = await _context.ScheduledTrips.FindAsync(id);
             if (scheduledTrips == null)
             {
@@ -120,8 +119,10 @@ namespace LogisticsAssistant.Controllers
             {
                 return NotFound();
             }
-
-            if (ModelState.IsValid)
+            scheduledTrips.CreationTripDate = DateTime.Now;
+            var lorry = _context.Lorries.FirstOrDefaultAsync(x => x.Id == scheduledTrips.LorryId);
+            scheduledTrips.DateOfArrival = CalcArrivalDate(scheduledTrips.DateOfDepartue, scheduledTrips.Distance, lorry.Result.MaxSpeed, lorry.Result.BreakInMinutes, lorry.Result.BreakAfterRideInHours);
+            if (ModelState.IsValid && IsTripDateValid(lorry.Result.Id, scheduledTrips.DateOfDepartue, scheduledTrips.DateOfArrival))
             {
                 try
                 {
@@ -151,7 +152,6 @@ namespace LogisticsAssistant.Controllers
             {
                 return NotFound();
             }
-
             var scheduledTrips = await _context.ScheduledTrips
                 .Include(s => s.Lorry)
                 .FirstOrDefaultAsync(m => m.ScheduledTripId == id);

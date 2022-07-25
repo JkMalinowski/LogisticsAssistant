@@ -30,6 +30,9 @@ namespace LogisticsAssistant.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
+                    b.Property<double>("BreakAfterRideInHours")
+                        .HasColumnType("float");
+
                     b.Property<int>("BreakInMinutes")
                         .HasColumnType("int");
 

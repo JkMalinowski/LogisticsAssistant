@@ -48,10 +48,10 @@
             @Html.DisplayFor(model => model.Lorry.LorryBrand)
         </dd>
     </dl>
-    
+
     <form asp-action="Delete">
         <input type="hidden" asp-for="ScheduledTripId" />
         <input type="submit" value="Delete" class="btn btn-danger" /> |
-        <a asp-action="Index">Back to List</a>
+        <a class="btn btn-secondary" asp-action="Index">Back to List</a>
     </form>
 </div>

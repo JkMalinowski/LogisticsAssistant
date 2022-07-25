@@ -7,13 +7,13 @@
 <h1>Scheduled trips</h1>
 
 <p>
-    <a asp-action="Create">Schedule a new trip</a>
+    <a class="btn btn-success" asp-action="Create">Schedule a new trip</a>
 </p>
 
 <form asp-controller="ScheduledTrips" asp-action="Index" method="get">
     <p>
-        Search in discription: <input type="text" name="SearchString" />
-        <input type="submit" value="Filter" />
+        Search in description: <input type="text" name="SearchString" />
+        <input type="submit" value="Filter" class="btn btn-secondary"/>
     </p>
 </form>
 
@@ -63,18 +63,17 @@
                 @Html.DisplayFor(modelItem => item.CreationTripDate)
             </td>
             <td>
-                <a asp-action="Edit" asp-route-id="@item.ScheduledTripId">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.ScheduledTripId">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.ScheduledTripId">Delete</a>
+                <a class="btn btn-info" asp-action="Edit" asp-route-id="@item.ScheduledTripId">Edit</a> |
+                <a class="btn btn-success" asp-action="Details" asp-route-id="@item.ScheduledTripId">Details</a> |
+                <a class="btn btn-danger" asp-action="Delete" asp-route-id="@item.ScheduledTripId">Delete</a>
             </td>
         </tr>
 }
     </tbody>
 </table>
-<canvas id="Chart"></canvas>
+<div id="Chart"></div>
 
 @section scripts{
-    <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script src="~/js/drawChart.js"></script>
 }

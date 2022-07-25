@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using LogisticsAssistant.Data;
+﻿using LogisticsAssistant.Data;
 using LogisticsAssistant.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LogisticsAssistant.Controllers
 {
@@ -35,7 +30,6 @@ namespace LogisticsAssistant.Controllers
             {
                 return NotFound();
             }
-
             var lorries = await _context.Lorries
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (lorries == null)
@@ -53,7 +47,7 @@ namespace LogisticsAssistant.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,LorryBrand,MaxSpeed,BreakInMinutes")] Lorries lorries)
+        public async Task<IActionResult> Create([Bind("Id,LorryBrand,MaxSpeed,BreakInMinutes,BreakAfterRideInHours")] Lorries lorries)
         {
             if (ModelState.IsValid)
             {
@@ -70,7 +64,6 @@ namespace LogisticsAssistant.Controllers
             {
                 return NotFound();
             }
-
             var lorries = await _context.Lorries.FindAsync(id);
             if (lorries == null)
             {
@@ -81,13 +74,12 @@ namespace LogisticsAssistant.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,LorryBrand,MaxSpeed,BreakInMinutes")] Lorries lorries)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,LorryBrand,MaxSpeed,BreakInMinutes,BreakAfterRideInHours")] Lorries lorries)
         {
             if (id != lorries.Id)
             {
                 return NotFound();
             }
-
             if (ModelState.IsValid)
             {
                 try
@@ -117,7 +109,6 @@ namespace LogisticsAssistant.Controllers
             {
                 return NotFound();
             }
-
             var lorries = await _context.Lorries
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (lorries == null)
@@ -141,7 +132,6 @@ namespace LogisticsAssistant.Controllers
             {
                 _context.Lorries.Remove(lorries);
             }
-
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
