@@ -1,5 +1,5 @@
-﻿using LogisticsAssistant.Data;
-using LogisticsAssistant.Models;
+﻿using LogisticsAssistant.Models;
+using LogisticsAssistant.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -10,54 +10,47 @@ namespace LogisticsAssistant.Controllers
     [Authorize]
     public class ScheduledTripsController : Controller
     {
-        private readonly LogisticsAssistantContext _context;
+        private readonly IScheduledTripRepository _context;
 
-        public ScheduledTripsController(LogisticsAssistantContext context)
+        public ScheduledTripsController(IScheduledTripRepository context)
         {
             _context = context;
         }
 
         [AllowAnonymous]
-        public async Task<IActionResult> Index(string lorryBrand, string searchString)
+        public IActionResult Index(string searchString)
         {
-            var logisticsAssistantContext = _context.ScheduledTrips.Include(s => s.Lorry);
             if (!String.IsNullOrEmpty(searchString))
             {
-                var logisticsAssistantContext2 = logisticsAssistantContext.Where(x => x.TripDescription.Contains(searchString));
-                return View(await logisticsAssistantContext2.ToListAsync());
+                return View(_context.GetAll().Where(x => x.TripDescription.Contains(searchString)));
             }
-            return View(await logisticsAssistantContext.ToListAsync());
+            return View(_context.GetAll());
         }
 
-        public async Task<IActionResult> Details(int? id)
+        public IActionResult Details(int id)
         {
-            if (id == null || _context.ScheduledTrips == null)
-            {
-                return NotFound();
-            }
-
-            var scheduledTrips = await _context.ScheduledTrips
-                .Include(s => s.Lorry)
-                .FirstOrDefaultAsync(m => m.ScheduledTripId == id);
-            if (scheduledTrips == null)
-            {
-                return NotFound();
-            }
-
-            return View(scheduledTrips);
+            return View(_context.Get(id));
         }
 
         public IActionResult Create()
         {
-            ViewData["LorryId"] = new SelectList(_context.Lorries, "Id", "LorryBrand");
+            ViewData["LorryId"] = new SelectList(_context.GetAllLorries(), "Id", "LorryBrand");
             return View();
         }
 
         private DateTime CalcArrivalDate(DateTime departueDate, int distance, int maxSpeed, int breakInMinutes, double breakAfterCertainRideTime)
         {
-            double tripTimeInHours = distance / maxSpeed;
-            double breakDurationInHours = (Double)breakInMinutes / 60.0;
-            double totalBreaksTimeInHours = Math.Ceiling(tripTimeInHours / breakAfterCertainRideTime) * breakDurationInHours;
+            double tripTimeInHours = (double)distance / (double)maxSpeed;
+            double breakDurationInHours = (double)breakInMinutes / 60.0;
+            double totalBreaksTimeInHours;
+            if (tripTimeInHours > breakAfterCertainRideTime)
+            {
+                totalBreaksTimeInHours = Math.Ceiling(tripTimeInHours / breakAfterCertainRideTime) * breakDurationInHours;
+            }
+            else
+            {
+                totalBreaksTimeInHours = 0;
+            }
             double totalTripTimeInHours = tripTimeInHours + totalBreaksTimeInHours;
             DateTime arrivalDate = departueDate.AddHours(totalTripTimeInHours);
             return arrivalDate;
@@ -65,7 +58,7 @@ namespace LogisticsAssistant.Controllers
 
         private bool IsTripDateValid(int lorryId, DateTime dateOfDepartue, DateTime dateOfArrival)
         {
-            var lorryTrips = _context.ScheduledTrips.Where(x => x.LorryId == lorryId);
+            var lorryTrips = _context.GetAll().Where(x => x.LorryId == lorryId);
             foreach(var trip in lorryTrips)
             {
                 if ((dateOfDepartue < trip.DateOfDepartue && dateOfArrival > trip.DateOfDepartue) ||
@@ -81,108 +74,54 @@ namespace LogisticsAssistant.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("LorryId,TripDescription,Distance,DateOfDepartue,DateOfArrival,CreationTripDate")] ScheduledTrips scheduledTrips)
+        public IActionResult Create([Bind("LorryId,TripDescription,Distance,DateOfDepartue")] ScheduledTrips scheduledTrip)
         {
-            scheduledTrips.CreationTripDate = DateTime.Now;
-            var lorry = _context.Lorries.FirstOrDefaultAsync(x => x.Id == scheduledTrips.LorryId);
-            scheduledTrips.DateOfArrival = CalcArrivalDate(scheduledTrips.DateOfDepartue, scheduledTrips.Distance, lorry.Result.MaxSpeed, lorry.Result.BreakInMinutes, lorry.Result.BreakAfterRideInHours);
-            if (ModelState.IsValid && IsTripDateValid(lorry.Result.Id, scheduledTrips.DateOfDepartue, scheduledTrips.DateOfArrival))
+            scheduledTrip.CreationTripDate = DateTime.Now;
+            var lorry = _context.GetAllLorries().FirstOrDefaultAsync(x => x.Id == scheduledTrip.LorryId);
+            scheduledTrip.DateOfArrival = CalcArrivalDate(scheduledTrip.DateOfDepartue, scheduledTrip.Distance, lorry.Result.MaxSpeed, lorry.Result.BreakInMinutes, lorry.Result.BreakAfterRideInHours);
+            if (ModelState.IsValid && IsTripDateValid(lorry.Result.Id, scheduledTrip.DateOfDepartue, scheduledTrip.DateOfArrival))
             {
-                _context.Add(scheduledTrips);
-                await _context.SaveChangesAsync();
+                _context.Add(scheduledTrip);
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["LorryId"] = new SelectList(_context.Lorries, "Id", "LorryBrand", scheduledTrips.LorryId);
-            return View(scheduledTrips);
+            ViewData["LorryId"] = new SelectList(_context.GetAllLorries(), "Id", "LorryBrand", scheduledTrip.LorryId);
+            return View(scheduledTrip);
         }
 
-        public async Task<IActionResult> Edit(int? id)
+        public IActionResult Edit(int id)
         {
-            if (id == null || _context.ScheduledTrips == null)
-            {
-                return NotFound();
-            }
-            var scheduledTrips = await _context.ScheduledTrips.FindAsync(id);
-            if (scheduledTrips == null)
-            {
-                return NotFound();
-            }
-            ViewData["LorryId"] = new SelectList(_context.Lorries, "Id", "LorryBrand", scheduledTrips.LorryId);
-            return View(scheduledTrips);
+            var scheduledTrip = _context.Get(id);
+            ViewData["LorryId"] = new SelectList(_context.GetAllLorries(), "Id", "LorryBrand", scheduledTrip.LorryId);
+            return View(scheduledTrip);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ScheduledTripId,LorryId,TripDescription,Distance,DateOfDepartue,DateOfArrival,CreationTripDate")] ScheduledTrips scheduledTrips)
+        public IActionResult Edit(int id, [Bind("ScheduledTripId,LorryId,TripDescription,Distance,DateOfDepartue")] ScheduledTrips scheduledTrip)
         {
-            if (id != scheduledTrips.ScheduledTripId)
+            scheduledTrip.CreationTripDate = DateTime.Now;
+            var lorry = _context.GetAllLorries().FirstOrDefault(x => x.Id == scheduledTrip.LorryId);
+            scheduledTrip.DateOfArrival = CalcArrivalDate(scheduledTrip.DateOfDepartue, scheduledTrip.Distance, lorry.MaxSpeed, lorry.BreakInMinutes, lorry.BreakAfterRideInHours);
+            if (ModelState.IsValid && IsTripDateValid(lorry.Id, scheduledTrip.DateOfDepartue, scheduledTrip.DateOfArrival))
             {
-                return NotFound();
-            }
-            scheduledTrips.CreationTripDate = DateTime.Now;
-            var lorry = _context.Lorries.FirstOrDefaultAsync(x => x.Id == scheduledTrips.LorryId);
-            scheduledTrips.DateOfArrival = CalcArrivalDate(scheduledTrips.DateOfDepartue, scheduledTrips.Distance, lorry.Result.MaxSpeed, lorry.Result.BreakInMinutes, lorry.Result.BreakAfterRideInHours);
-            if (ModelState.IsValid && IsTripDateValid(lorry.Result.Id, scheduledTrips.DateOfDepartue, scheduledTrips.DateOfArrival))
-            {
-                try
-                {
-                    _context.Update(scheduledTrips);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ScheduledTripsExists(scheduledTrips.ScheduledTripId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                _context.Update(id, scheduledTrip);
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["LorryId"] = new SelectList(_context.Lorries, "Id", "LorryBrand", scheduledTrips.LorryId);
-            return View(scheduledTrips);
+            ViewData["LorryId"] = new SelectList(_context.GetAllLorries(), "Id", "LorryBrand", scheduledTrip.LorryId);
+            return View(scheduledTrip);
         }
 
-        public async Task<IActionResult> Delete(int? id)
+        public IActionResult Delete(int id)
         {
-            if (id == null || _context.ScheduledTrips == null)
-            {
-                return NotFound();
-            }
-            var scheduledTrips = await _context.ScheduledTrips
-                .Include(s => s.Lorry)
-                .FirstOrDefaultAsync(m => m.ScheduledTripId == id);
-            if (scheduledTrips == null)
-            {
-                return NotFound();
-            }
-
-            return View(scheduledTrips);
+            return View(_context.Get(id));
         }
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public IActionResult DeleteConfirmed(int id)
         {
-            if (_context.ScheduledTrips == null)
-            {
-                return Problem("Entity set 'LogisticsAssistantContext.ScheduledTrips'  is null.");
-            }
-            var scheduledTrips = await _context.ScheduledTrips.FindAsync(id);
-            if (scheduledTrips != null)
-            {
-                _context.ScheduledTrips.Remove(scheduledTrips);
-            }
-            await _context.SaveChangesAsync();
+            _context.Delete(id);
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool ScheduledTripsExists(int id)
-        {
-          return (_context.ScheduledTrips?.Any(e => e.ScheduledTripId == id)).GetValueOrDefault();
         }
     }
 }

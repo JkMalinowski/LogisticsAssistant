@@ -1,43 +1,29 @@
-﻿using LogisticsAssistant.Data;
-using LogisticsAssistant.Models;
+﻿using LogisticsAssistant.Models;
+using LogisticsAssistant.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace LogisticsAssistant.Controllers
 {
     [Authorize]
     public class LorriesController : Controller
     {
-        private readonly LogisticsAssistantContext _context;
+        private readonly ILorriesRepository _lorriesRepository;
 
-        public LorriesController(LogisticsAssistantContext context)
+        public LorriesController(ILorriesRepository lorriesRepository)
         {
-            _context = context;
+            _lorriesRepository = lorriesRepository;
         }
 
         [AllowAnonymous]
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-              return _context.Lorries != null ?
-                          View(await _context.Lorries.ToListAsync()) :
-                          Problem("Entity set 'LogisticsAssistantContext.Lorries'  is null.");
+            return View(_lorriesRepository.GetAll());
         }
 
-        public async Task<IActionResult> Details(int? id)
+        public IActionResult Details(int id)
         {
-            if (id == null || _context.Lorries == null)
-            {
-                return NotFound();
-            }
-            var lorries = await _context.Lorries
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (lorries == null)
-            {
-                return NotFound();
-            }
-
-            return View(lorries);
+            return View(_lorriesRepository.Get(id));
         }
 
         public IActionResult Create()
@@ -47,98 +33,44 @@ namespace LogisticsAssistant.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,LorryBrand,MaxSpeed,BreakInMinutes,BreakAfterRideInHours")] Lorries lorries)
+        public IActionResult Create([Bind("Id,LorryBrand,MaxSpeed,BreakInMinutes,BreakAfterRideInHours")] Lorries lorries)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(lorries);
-                await _context.SaveChangesAsync();
+                _lorriesRepository.Add(lorries);
                 return RedirectToAction(nameof(Index));
             }
             return View(lorries);
         }
 
-        public async Task<IActionResult> Edit(int? id)
+        public IActionResult Edit(int id)
         {
-            if (id == null || _context.Lorries == null)
-            {
-                return NotFound();
-            }
-            var lorries = await _context.Lorries.FindAsync(id);
-            if (lorries == null)
-            {
-                return NotFound();
-            }
-            return View(lorries);
+            return View(_lorriesRepository.Get(id));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,LorryBrand,MaxSpeed,BreakInMinutes,BreakAfterRideInHours")] Lorries lorries)
+        public IActionResult Edit(int id, [Bind("Id,LorryBrand,MaxSpeed,BreakInMinutes,BreakAfterRideInHours")] Lorries lorries)
         {
-            if (id != lorries.Id)
-            {
-                return NotFound();
-            }
             if (ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(lorries);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!LorriesExists(lorries.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                _lorriesRepository.Update(id, lorries);
                 return RedirectToAction(nameof(Index));
             }
             return View(lorries);
         }
 
-        public async Task<IActionResult> Delete(int? id)
+        public IActionResult Delete(int id)
         {
-            if (id == null || _context.Lorries == null)
-            {
-                return NotFound();
-            }
-            var lorries = await _context.Lorries
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (lorries == null)
-            {
-                return NotFound();
-            }
-
-            return View(lorries);
+            return View(_lorriesRepository.Get(id));
         }
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public IActionResult DeleteConfirmed(int id)
         {
-            if (_context.Lorries == null)
-            {
-                return Problem("Entity set 'LogisticsAssistantContext.Lorries'  is null.");
-            }
-            var lorries = await _context.Lorries.FindAsync(id);
-            if (lorries != null)
-            {
-                _context.Lorries.Remove(lorries);
-            }
-            await _context.SaveChangesAsync();
+            _lorriesRepository.Delete(id);
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool LorriesExists(int id)
-        {
-          return (_context.Lorries?.Any(e => e.Id == id)).GetValueOrDefault();
         }
     }
 }

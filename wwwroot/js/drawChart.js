@@ -11,8 +11,6 @@
     }
 }
 
-google.charts.load("current", { packages: ["timeline"] });
-google.charts.setOnLoadCallback(drawChart);
 function drawChart() {
     var container = document.getElementById('Chart');
     var chart = new google.visualization.Timeline(container);
@@ -23,3 +21,8 @@ function drawChart() {
     addDataToDataTable(dataTable);
     chart.draw(dataTable);
 }
+
+if (document.querySelector('td') != null) {
+    google.charts.load("current", { packages: ["timeline"] });
+    google.charts.setOnLoadCallback(drawChart);
+} 
