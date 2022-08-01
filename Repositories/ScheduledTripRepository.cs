@@ -49,7 +49,7 @@ namespace LogisticsAssistant.Repositories
         public void Update(int scheduledTripId, ScheduledTrips scheduledTrip)
         {
             var result = _context.ScheduledTrips.SingleOrDefault(x => x.ScheduledTripId == scheduledTripId);
-            if(result == null)
+            if(result != null)
             {
                 result.CreationTripDate = scheduledTrip.CreationTripDate;
                 result.DateOfArrival = scheduledTrip.DateOfArrival;

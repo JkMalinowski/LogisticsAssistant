@@ -38,48 +38,19 @@ namespace LogisticsAssistant.Controllers
             return View();
         }
 
-        private DateTime CalcArrivalDate(DateTime departueDate, int distance, int maxSpeed, int breakInMinutes, double breakAfterCertainRideTime)
-        {
-            double tripTimeInHours = (double)distance / (double)maxSpeed;
-            double breakDurationInHours = (double)breakInMinutes / 60.0;
-            double totalBreaksTimeInHours;
-            if (tripTimeInHours > breakAfterCertainRideTime)
-            {
-                totalBreaksTimeInHours = Math.Ceiling(tripTimeInHours / breakAfterCertainRideTime) * breakDurationInHours;
-            }
-            else
-            {
-                totalBreaksTimeInHours = 0;
-            }
-            double totalTripTimeInHours = tripTimeInHours + totalBreaksTimeInHours;
-            DateTime arrivalDate = departueDate.AddHours(totalTripTimeInHours);
-            return arrivalDate;
-        }
-
-        private bool IsTripDateValid(int lorryId, DateTime dateOfDepartue, DateTime dateOfArrival)
-        {
-            var lorryTrips = _context.GetAll().Where(x => x.LorryId == lorryId);
-            foreach(var trip in lorryTrips)
-            {
-                if ((dateOfDepartue < trip.DateOfDepartue && dateOfArrival > trip.DateOfDepartue) ||
-                    (dateOfDepartue < trip.DateOfArrival && dateOfArrival > trip.DateOfArrival) ||
-                    (dateOfDepartue < trip.DateOfDepartue && dateOfArrival > trip.DateOfArrival) ||
-                    (dateOfDepartue > trip.DateOfDepartue && dateOfArrival < trip.DateOfArrival))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create([Bind("LorryId,TripDescription,Distance,DateOfDepartue")] ScheduledTrips scheduledTrip)
         {
             scheduledTrip.CreationTripDate = DateTime.Now;
             var lorry = _context.GetAllLorries().FirstOrDefaultAsync(x => x.Id == scheduledTrip.LorryId);
-            scheduledTrip.DateOfArrival = CalcArrivalDate(scheduledTrip.DateOfDepartue, scheduledTrip.Distance, lorry.Result.MaxSpeed, lorry.Result.BreakInMinutes, lorry.Result.BreakAfterRideInHours);
-            if (ModelState.IsValid && IsTripDateValid(lorry.Result.Id, scheduledTrip.DateOfDepartue, scheduledTrip.DateOfArrival))
+            scheduledTrip.DateOfArrival = CalcDate.CalcArrivalDate(scheduledTrip.DateOfDepartue, scheduledTrip.Distance, lorry.Result.MaxSpeed, lorry.Result.BreakInMinutes, lorry.Result.BreakAfterRideInHours);
+            var lorryTrips = _context.GetAll().Where(x => x.LorryId == scheduledTrip.LorryId);
+            if (!TripDateValidator.IsTripDateValid(lorryTrips, scheduledTrip.DateOfDepartue, scheduledTrip.DateOfArrival))
+            {
+                ModelState.AddModelError("DatesOverlap", "Trip overlap with another trip!");
+            }
+            if (ModelState.IsValid)
             {
                 _context.Add(scheduledTrip);
                 return RedirectToAction(nameof(Index));
@@ -91,7 +62,7 @@ namespace LogisticsAssistant.Controllers
         public IActionResult Edit(int id)
         {
             var scheduledTrip = _context.Get(id);
-            ViewData["LorryId"] = new SelectList(_context.GetAllLorries(), "Id", "LorryBrand", scheduledTrip.LorryId);
+            ViewData["LorryId"] = new SelectList(_context.GetAllLorries(), "Id", "LorryBrand");
             return View(scheduledTrip);
         }
 
@@ -99,10 +70,16 @@ namespace LogisticsAssistant.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Edit(int id, [Bind("ScheduledTripId,LorryId,TripDescription,Distance,DateOfDepartue")] ScheduledTrips scheduledTrip)
         {
+            Console.WriteLine(scheduledTrip);
             scheduledTrip.CreationTripDate = DateTime.Now;
             var lorry = _context.GetAllLorries().FirstOrDefault(x => x.Id == scheduledTrip.LorryId);
-            scheduledTrip.DateOfArrival = CalcArrivalDate(scheduledTrip.DateOfDepartue, scheduledTrip.Distance, lorry.MaxSpeed, lorry.BreakInMinutes, lorry.BreakAfterRideInHours);
-            if (ModelState.IsValid && IsTripDateValid(lorry.Id, scheduledTrip.DateOfDepartue, scheduledTrip.DateOfArrival))
+            scheduledTrip.DateOfArrival = CalcDate.CalcArrivalDate(scheduledTrip.DateOfDepartue, scheduledTrip.Distance, lorry.MaxSpeed, lorry.BreakInMinutes, lorry.BreakAfterRideInHours);
+            var lorryTrips = _context.GetAll().Where(x => x.LorryId == scheduledTrip.LorryId && x.ScheduledTripId != scheduledTrip.ScheduledTripId);
+            if (!TripDateValidator.IsTripDateValid(lorryTrips, scheduledTrip.DateOfDepartue, scheduledTrip.DateOfArrival))
+            {
+                ModelState.AddModelError("DatesOverlap", "Trip overlap with another trip!");
+            }
+            if (ModelState.IsValid)
             {
                 _context.Update(id, scheduledTrip);
                 return RedirectToAction(nameof(Index));
